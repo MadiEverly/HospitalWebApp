@@ -81,10 +81,14 @@ export default function CareCentersListPage() {
           .map((doc) => careCenterFromSnapshot(doc))
           .filter((c): c is CareCenter => c !== null);
         setCareCenters(list);
-      } catch (e) {
-        setError(
-          e instanceof Error ? e.message : "Failed to load care centers."
-        );
+      } catch (e: unknown) {
+        const message =
+          e && typeof e === "object" && "code" in e && (e as { code: string }).code === "permission-denied"
+            ? "Access denied. Deploy Firestore security rules (e.g. run firebase deploy --only firestore from the project root with firestore.rules and firebase.json)."
+            : e instanceof Error
+              ? e.message
+              : "Failed to load care centers.";
+        setError(message);
       } finally {
         setLoading(false);
       }

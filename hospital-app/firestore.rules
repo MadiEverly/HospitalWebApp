@@ -1,0 +1,9 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow read/write to careCenters. Tighten with request.auth != null if you add Firebase Auth.
+    match /careCenters/{docId} {
+      allow read, write: if true;
+    }
+  }
+}

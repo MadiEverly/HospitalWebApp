@@ -14,6 +14,12 @@ function getFirebaseApp(): FirebaseApp {
   if (getApps().length > 0) {
     return getApp();
   }
+  // Fail fast in production: missing projectId usually means env vars weren't set at build time
+  if (!firebaseConfig.projectId || !firebaseConfig.apiKey) {
+    throw new Error(
+      "Firebase is not configured. Set NEXT_PUBLIC_FIREBASE_PROJECT_ID and NEXT_PUBLIC_FIREBASE_API_KEY (and other NEXT_PUBLIC_FIREBASE_* vars) at build time. See .env.example."
+    );
+  }
   return initializeApp(firebaseConfig);
 }
 
