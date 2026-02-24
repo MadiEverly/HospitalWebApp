@@ -1,7 +1,7 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getFirestore, type Firestore } from "firebase/firestore";
 
-/** Firebase App Hosting injects FIREBASE_WEBAPP_CONFIG at build and runtime. */
+/** Firebase App Hosting injects FIREBASE_WEBAPP_CONFIG at build (server). Client bundle may not have it; use initializeApp() with no args there. */
 function getFirebaseConfig(): Record<string, string | undefined> {
   const webappConfig = process.env.FIREBASE_WEBAPP_CONFIG;
   if (webappConfig) {
@@ -34,12 +34,17 @@ function getFirebaseApp(): FirebaseApp {
     return getApp();
   }
   const firebaseConfig = getFirebaseConfig();
-  if (!firebaseConfig.projectId || !firebaseConfig.apiKey) {
+  if (firebaseConfig.projectId && firebaseConfig.apiKey) {
+    return initializeApp(firebaseConfig);
+  }
+  // App Hosting client: config may not be in the bundle; SDK can use no-arg init (see Firebase App Hosting docs)
+  try {
+    return initializeApp();
+  } catch {
     throw new Error(
-      "Firebase is not configured. Use FIREBASE_WEBAPP_CONFIG (Firebase App Hosting) or set NEXT_PUBLIC_FIREBASE_PROJECT_ID and NEXT_PUBLIC_FIREBASE_API_KEY at build time. See .env.example."
+      "Firebase is not configured. Set NEXT_PUBLIC_FIREBASE_PROJECT_ID and NEXT_PUBLIC_FIREBASE_API_KEY (or use Firebase App Hosting). See .env.example."
     );
   }
-  return initializeApp(firebaseConfig);
 }
 
 export const app = getFirebaseApp();

@@ -1,10 +1,10 @@
 # Deploying the Hospital Web App
 
-## 1. Firebase environment variables (required)
+## 1. Firebase environment variables (required for client)
 
-The app needs Firebase config at **build time** (Next.js inlines `NEXT_PUBLIC_*` variables into the client bundle).
+The **server/build** gets config from `FIREBASE_WEBAPP_CONFIG` on Firebase App Hosting. The **browser** only gets config if it’s in the client bundle. Next.js inlines `NEXT_PUBLIC_*` into the client; other env vars are not.
 
-Set these in your CI/CD or hosting platform (e.g. GitHub Actions secrets, Vercel Environment Variables, Firebase Hosting config):
+**Firebase App Hosting:** In the Firebase Console → App Hosting → your app → Environment variables, add these so they’re available at build time and the “View care centers” page works in the browser:
 
 - `NEXT_PUBLIC_FIREBASE_API_KEY`
 - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
@@ -13,9 +13,9 @@ Set these in your CI/CD or hosting platform (e.g. GitHub Actions secrets, Vercel
 - `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
 - `NEXT_PUBLIC_FIREBASE_APP_ID`
 
-Copy from Firebase Console → Project settings → Your apps → Web app config.
+Copy values from Project settings → Your apps → Web app config. Redeploy after adding them.
 
-If these are missing when you build, the app will throw a clear error on load.
+**Other hosts (Vercel, etc.):** Set the same `NEXT_PUBLIC_FIREBASE_*` variables in your platform’s environment/config.
 
 ## 2. Firestore security rules (required for care centers to load)
 
