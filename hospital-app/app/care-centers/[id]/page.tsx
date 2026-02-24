@@ -31,11 +31,11 @@ export default function CareCenterEditPage() {
       setNotFound(true);
       return;
     }
-    async function fetchCareCenter() {
+    async function fetchCareCenter(docId: string) {
       setLoading(true);
       setError(null);
       try {
-        const snapshot = await getDoc(doc(db, CARE_CENTERS_COLLECTION, id));
+        const snapshot = await getDoc(doc(db, CARE_CENTERS_COLLECTION, docId));
         const data = careCenterFromSnapshot(snapshot);
         if (data) {
           setCareCenter(data);
@@ -50,7 +50,7 @@ export default function CareCenterEditPage() {
         setLoading(false);
       }
     }
-    fetchCareCenter();
+    fetchCareCenter(id);
   }, [id]);
 
   const handleSubmit = async (data: CareCenter) => {
