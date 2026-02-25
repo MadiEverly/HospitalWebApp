@@ -2,10 +2,11 @@
 
 import { useState, useCallback, useMemo } from "react";
 import { Country, State } from "country-state-city";
-import type { CareCenter, Capability } from "@/lib/types/care-center";
+import type { CareCenter } from "@/lib/types/care-center";
 import {
   createCapability,
   createEmptyCareCenter,
+  PREDEFINED_CAPABILITIES,
 } from "@/lib/types/care-center";
 import SearchableSelect, { type SearchableOption } from "@/app/components/SearchableSelect";
 import { geocodeAddress } from "@/lib/geocode";
@@ -62,27 +63,20 @@ export default function CareCenterForm({
     setForm((prev) => ({ ...prev, country: value, region: "" }));
   }, []);
 
-  const addCapability = useCallback(() => {
-    setForm((prev) => ({
-      ...prev,
-      capabilities: [...prev.capabilities, createCapability()],
-    }));
-  }, []);
-
-  const removeCapability = useCallback((id: string) => {
-    setForm((prev) => ({
-      ...prev,
-      capabilities: prev.capabilities.filter((c) => c.id !== id),
-    }));
-  }, []);
-
-  const updateCapability = useCallback((id: string, name: string) => {
-    setForm((prev) => ({
-      ...prev,
-      capabilities: prev.capabilities.map((c) =>
-        c.id === id ? { ...c, name } : c
-      ),
-    }));
+  const toggleCapability = useCallback((name: string) => {
+    setForm((prev) => {
+      const has = prev.capabilities.some((c) => c.name === name);
+      if (has) {
+        return {
+          ...prev,
+          capabilities: prev.capabilities.filter((c) => c.name !== name),
+        };
+      }
+      return {
+        ...prev,
+        capabilities: [...prev.capabilities, createCapability(name)],
+      };
+    });
   }, []);
 
   const [geocodeLoading, setGeocodeLoading] = useState(false);
@@ -368,36 +362,34 @@ export default function CareCenterForm({
 
       {/* Capabilities */}
       <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-            Capabilities
-          </h3>
-          <button
-            type="button"
-            onClick={addCapability}
-            disabled={disabled}
-            className="rounded-lg bg-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-800 transition hover:bg-zinc-300 disabled:opacity-50 dark:bg-zinc-600 dark:text-zinc-100 dark:hover:bg-zinc-500"
-          >
-            + Add capability
-          </button>
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+          Capabilities
+        </h3>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          Check each capability this care center has.
+        </p>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {PREDEFINED_CAPABILITIES.map((name) => {
+            const checked = form.capabilities.some((c) => c.name === name);
+            return (
+              <label
+                key={name}
+                className="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2 transition hover:bg-zinc-50 dark:border-zinc-600 dark:hover:bg-zinc-800/50"
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => toggleCapability(name)}
+                  disabled={disabled}
+                  className="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500 dark:border-zinc-600 dark:bg-zinc-800"
+                />
+                <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                  {name}
+                </span>
+              </label>
+            );
+          })}
         </div>
-        {form.capabilities.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-zinc-300 py-6 text-center text-sm text-zinc-500 dark:border-zinc-600 dark:text-zinc-400">
-            No capabilities yet. Click &quot;Add capability&quot; to add one.
-          </p>
-        ) : (
-          <ul className="space-y-3">
-            {form.capabilities.map((cap) => (
-              <CapabilityRow
-                key={cap.id}
-                capability={cap}
-                onNameChange={(name) => updateCapability(cap.id, name)}
-                onRemove={() => removeCapability(cap.id)}
-                inputClass={inputClass}
-              />
-            ))}
-          </ul>
-        )}
       </section>
 
       <div className="flex justify-end gap-3 border-t border-zinc-200 pt-6 dark:border-zinc-700">
@@ -418,53 +410,5 @@ export default function CareCenterForm({
         </button>
       </div>
     </form>
-  );
-}
-
-function CapabilityRow({
-  capability,
-  onNameChange,
-  onRemove,
-  inputClass,
-}: {
-  capability: Capability;
-  onNameChange: (name: string) => void;
-  onRemove: () => void;
-  inputClass: string;
-}) {
-  return (
-    <li className="flex items-center gap-2">
-      <input
-        type="text"
-        value={capability.name}
-        onChange={(e) => onNameChange(e.target.value)}
-        className={inputClass}
-        placeholder="Capability name"
-      />
-      <button
-        type="button"
-        onClick={onRemove}
-        aria-label={`Remove ${capability.name || "capability"}`}
-        className="shrink-0 rounded-lg p-2 text-zinc-500 transition hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30 dark:hover:text-red-400"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M3 6h18" />
-          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-          <line x1="10" x2="10" y1="11" y2="17" />
-          <line x1="14" x2="14" y1="11" y2="17" />
-        </svg>
-      </button>
-    </li>
   );
 }

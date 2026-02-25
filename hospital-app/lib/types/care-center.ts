@@ -6,6 +6,21 @@ export interface Capability {
   name: string;
 }
 
+/** Predefined capability options shown as checkboxes in the form. */
+export const PREDEFINED_CAPABILITIES = [
+  "X-ray",
+  "Ultrasound",
+  "Emergency Room",
+  "Urgent Care",
+  "Stitches",
+  "Pediatric Care",
+  "Trauma Center",
+  "Maternity",
+  "Poison treatment",
+  "Burn treatment",
+  "CT scan",
+] as const;
+
 /**
  * Matches Swift CareCenter: Identifiable, Hashable, Codable
  */
