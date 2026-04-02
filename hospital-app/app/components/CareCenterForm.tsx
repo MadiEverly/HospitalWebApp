@@ -130,6 +130,9 @@ export default function CareCenterForm({
       dailyHours: form.dailyHours || undefined,
       phoneNumber: form.phoneNumber || undefined,
       email: form.email || undefined,
+      waitTime:
+        form.waitTime != null && form.waitTime > 0 ? form.waitTime : undefined,
+      facilityIssueType: form.facilityIssueType?.trim() || undefined,
     };
     onSubmit?.(payload);
   };
@@ -360,6 +363,43 @@ export default function CareCenterForm({
         </div>
       </section>
 
+      {/* Wait time (Firestore: waitTime, minutes) & facility issue type */}
+      <section className="space-y-4">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+          Wait time & facility issue
+        </h3>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          Wait time is stored as total minutes in Firestore. Leave hours and minutes at 0 to clear it.
+        </p>
+        <DurationFields
+          idPrefix="wait"
+          label="Typical wait time"
+          description="How long patients typically wait before being seen."
+          valueMinutes={form.waitTime}
+          onChange={(v) => update("waitTime", v)}
+          disabled={disabled}
+          inputClass={inputClass}
+          labelClass={labelClass}
+        />
+        <div>
+          <label htmlFor="facilityIssueType" className={labelClass}>
+            Facility issue type
+          </label>
+          <input
+            id="facilityIssueType"
+            type="text"
+            value={form.facilityIssueType ?? ""}
+            onChange={(e) => update("facilityIssueType", e.target.value)}
+            disabled={disabled}
+            className={inputClass}
+            placeholder='e.g. X-ray broken'
+          />
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            Leave blank if there is no current issue.
+          </p>
+        </div>
+      </section>
+
       {/* Capabilities */}
       <section className="space-y-4">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
@@ -410,5 +450,80 @@ export default function CareCenterForm({
         </button>
       </div>
     </form>
+  );
+}
+
+function DurationFields({
+  idPrefix,
+  label,
+  description,
+  valueMinutes,
+  onChange,
+  disabled,
+  inputClass,
+  labelClass,
+}: {
+  idPrefix: string;
+  label: string;
+  description?: string;
+  valueMinutes: number | undefined;
+  onChange: (v: number | undefined) => void;
+  disabled?: boolean;
+  inputClass: string;
+  labelClass: string;
+}) {
+  const total = valueMinutes ?? 0;
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  const setDuration = (hours: number, minutes: number) => {
+    const hh = Math.max(0, Math.min(999, hours));
+    const mm = Math.max(0, Math.min(59, minutes));
+    const t = hh * 60 + mm;
+    onChange(t === 0 ? undefined : t);
+  };
+
+  return (
+    <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-600">
+      <p className={labelClass}>{label}</p>
+      {description && (
+        <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">{description}</p>
+      )}
+      <div className="grid grid-cols-2 gap-3 sm:max-w-xs">
+        <div>
+          <label htmlFor={`${idPrefix}-hours`} className="mb-1 block text-xs text-zinc-500 dark:text-zinc-400">
+            Hours
+          </label>
+          <input
+            id={`${idPrefix}-hours`}
+            type="number"
+            min={0}
+            max={999}
+            disabled={disabled}
+            value={h}
+            onChange={(e) =>
+              setDuration(parseInt(e.target.value, 10) || 0, m)
+            }
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label htmlFor={`${idPrefix}-minutes`} className="mb-1 block text-xs text-zinc-500 dark:text-zinc-400">
+            Minutes
+          </label>
+          <input
+            id={`${idPrefix}-minutes`}
+            type="number"
+            min={0}
+            max={59}
+            disabled={disabled}
+            value={m}
+            onChange={(e) =>
+              setDuration(h, parseInt(e.target.value, 10) || 0)
+            }
+            className={inputClass}
+          />
+        </div>
+      </div>
+    </div>
   );
 }

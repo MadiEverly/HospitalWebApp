@@ -9,6 +9,7 @@ import {
   careCenterFromSnapshot,
 } from "@/lib/care-centers";
 import type { CareCenter } from "@/lib/types/care-center";
+import { formatDurationMinutes } from "@/lib/duration";
 
 function filterCareCenters(
   list: CareCenter[],
@@ -398,6 +399,27 @@ export default function CareCentersListPage() {
                       {[cc.city, cc.region, cc.country].filter(Boolean).join(", ") || "—"}
                     </span>
                   </div>
+                  {(formatDurationMinutes(cc.waitTime) ||
+                    cc.facilityIssueType?.trim()) && (
+                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-600 dark:text-zinc-400">
+                      {formatDurationMinutes(cc.waitTime) && (
+                        <span>
+                          <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                            Wait:{" "}
+                          </span>
+                          {formatDurationMinutes(cc.waitTime)}
+                        </span>
+                      )}
+                      {cc.facilityIssueType?.trim() && (
+                        <span>
+                          <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                            Facility issue:{" "}
+                          </span>
+                          {cc.facilityIssueType.trim()}
+                        </span>
+                      )}
+                    </div>
+                  )}
                   {cc.capabilities.length > 0 && (
                     <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
                       {cc.capabilities.map((c) => c.name).filter(Boolean).join(", ") || "—"}

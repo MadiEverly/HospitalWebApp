@@ -38,6 +38,15 @@ export interface CareCenter {
   dailyHours?: string;
   phoneNumber?: string;
   email?: string;
+  /**
+   * Typical wait time in **minutes**. Firestore field name: `waitTime`.
+   */
+  waitTime?: number;
+  /**
+   * Current facility issue type / description (e.g. "X-ray broken").
+   * Firestore field name: `facilityIssueType`.
+   */
+  facilityIssueType?: string;
 }
 
 export function createCapability(name = ""): Capability {
