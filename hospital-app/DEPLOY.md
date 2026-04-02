@@ -19,7 +19,7 @@ Copy values from Project settings → Your apps → Web app config. Redeploy aft
 
 ## 2. Firestore security rules (required for care centers to load)
 
-By default, Firestore denies all reads and writes. This repo includes `firestore.rules` and `firebase.json` so the `careCenters` collection is readable and writable.
+By default, Firestore denies all reads and writes. This repo includes `firestore.rules` and `firebase.json` for **`careCenters`** and **`adminWaitTimeOverrides`** (manual wait times for the iOS app). Deploy rules after pulling changes so the web app can write overrides.
 
 **Deploy the rules once** (from the `hospital-app` directory, with Firebase CLI logged in):
 

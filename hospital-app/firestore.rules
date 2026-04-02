@@ -5,5 +5,9 @@ service cloud.firestore {
     match /careCenters/{docId} {
       allow read, write: if true;
     }
+    // Manual wait overrides (iOS listens here). Doc ID = care center UUID.
+    match /adminWaitTimeOverrides/{docId} {
+      allow read, write: if true;
+    }
   }
 }

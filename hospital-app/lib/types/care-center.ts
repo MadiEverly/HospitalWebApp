@@ -39,9 +39,14 @@ export interface CareCenter {
   phoneNumber?: string;
   email?: string;
   /**
-   * Typical wait time in **minutes**. Firestore field name: `waitTime`.
+   * Typical wait time in **minutes** on the care center doc (`waitTime`).
+   * Also synced to `adminWaitTimeOverrides/{id}` for the iOS app when saved.
    */
   waitTime?: number;
+  /** Only stored on adminWaitTimeOverrides; not written to careCenters. */
+  waitOverrideReason?: string;
+  /** Only stored on adminWaitTimeOverrides; not written to careCenters. */
+  waitOverrideUpdatedBy?: string;
   /**
    * Current facility issue type / description (e.g. "X-ray broken").
    * Firestore field name: `facilityIssueType`.

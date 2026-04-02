@@ -5,14 +5,21 @@ export const CARE_CENTERS_COLLECTION = "careCenters";
 
 /**
  * Firestore care center documents use these keys (among others):
- * - `waitTime` (number, minutes)
+ * - `waitTime` (number, minutes) — also mirrored to `adminWaitTimeOverrides/{id}` on save for iOS
  * - `facilityIssueType` (string)
  */
+
+/** Fields that exist only on adminWaitTimeOverrides, not on careCenters. */
+const CARE_CENTER_DOC_OMIT = new Set([
+  "waitOverrideReason",
+  "waitOverrideUpdatedBy",
+]);
 
 /** Remove undefined values so Firestore accepts the document. */
 export function toFirestoreData(data: CareCenter): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(data)) {
+    if (CARE_CENTER_DOC_OMIT.has(key)) continue;
     if (value !== undefined) out[key] = value;
   }
   return out;

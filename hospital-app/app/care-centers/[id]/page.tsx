@@ -10,6 +10,11 @@ import {
   toFirestoreData,
   careCenterFromSnapshot,
 } from "@/lib/care-centers";
+import {
+  syncAdminWaitTimeOverride,
+  getAdminWaitTimeOverride,
+  deleteAdminWaitTimeOverride,
+} from "@/lib/admin-wait-time-overrides";
 import CareCenterForm from "@/app/components/CareCenterForm";
 import type { CareCenter } from "@/lib/types/care-center";
 import { formatDurationMinutes } from "@/lib/duration";
@@ -39,6 +44,26 @@ export default function CareCenterEditPage() {
         const snapshot = await getDoc(doc(db, CARE_CENTERS_COLLECTION, docId));
         const data = careCenterFromSnapshot(snapshot);
         if (data) {
+          try {
+            const override = await getAdminWaitTimeOverride(docId);
+            if (override) {
+              if (
+                override.minutes != null &&
+                override.minutes > 0 &&
+                Number.isFinite(override.minutes)
+              ) {
+                data.waitTime = override.minutes;
+              }
+              if (override.reason != null) {
+                data.waitOverrideReason = override.reason;
+              }
+              if (override.updatedBy != null) {
+                data.waitOverrideUpdatedBy = override.updatedBy;
+              }
+            }
+          } catch {
+            // Still show the care center if override read fails (e.g. rules not deployed).
+          }
           setCareCenter(data);
         } else {
           setNotFound(true);
@@ -61,6 +86,12 @@ export default function CareCenterEditPage() {
     try {
       const payload = toFirestoreData(data);
       await updateDoc(doc(db, CARE_CENTERS_COLLECTION, id), payload);
+      await syncAdminWaitTimeOverride({
+        careCenterID: id,
+        minutes: data.waitTime,
+        reason: data.waitOverrideReason,
+        updatedBy: data.waitOverrideUpdatedBy,
+      });
       router.push("/care-centers");
     } catch (e) {
       setError(
@@ -77,6 +108,7 @@ export default function CareCenterEditPage() {
     setIsDeleting(true);
     setError(null);
     try {
+      await deleteAdminWaitTimeOverride(id);
       await deleteDoc(doc(db, CARE_CENTERS_COLLECTION, id));
       router.push("/care-centers");
     } catch (e) {

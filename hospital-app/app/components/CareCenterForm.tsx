@@ -369,7 +369,10 @@ export default function CareCenterForm({
           Wait time & facility issue
         </h3>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Wait time is stored as total minutes in Firestore. Leave hours and minutes at 0 to clear it.
+          Manual wait is saved to{" "}
+          <span className="font-medium">adminWaitTimeOverrides</span> (same
+          UUID as this care center) so the iOS app updates immediately. Leave
+          hours and minutes at 0 to clear the override.
         </p>
         <DurationFields
           idPrefix="wait"
@@ -381,6 +384,36 @@ export default function CareCenterForm({
           inputClass={inputClass}
           labelClass={labelClass}
         />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="waitOverrideReason" className={labelClass}>
+              Override reason (optional)
+            </label>
+            <input
+              id="waitOverrideReason"
+              type="text"
+              value={form.waitOverrideReason ?? ""}
+              onChange={(e) => update("waitOverrideReason", e.target.value)}
+              disabled={disabled}
+              className={inputClass}
+              placeholder="e.g. Staff entered"
+            />
+          </div>
+          <div>
+            <label htmlFor="waitOverrideUpdatedBy" className={labelClass}>
+              Updated by (optional)
+            </label>
+            <input
+              id="waitOverrideUpdatedBy"
+              type="text"
+              value={form.waitOverrideUpdatedBy ?? ""}
+              onChange={(e) => update("waitOverrideUpdatedBy", e.target.value)}
+              disabled={disabled}
+              className={inputClass}
+              placeholder="Defaults to Hospital web app"
+            />
+          </div>
+        </div>
         <div>
           <label htmlFor="facilityIssueType" className={labelClass}>
             Facility issue type

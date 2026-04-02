@@ -9,6 +9,7 @@ import {
   CARE_CENTERS_COLLECTION,
   toFirestoreData,
 } from "@/lib/care-centers";
+import { syncAdminWaitTimeOverride } from "@/lib/admin-wait-time-overrides";
 import CareCenterForm from "@/app/components/CareCenterForm";
 import type { CareCenter } from "@/lib/types/care-center";
 
@@ -23,6 +24,12 @@ export default function NewCareCenterPage() {
     try {
       const payload = toFirestoreData(data);
       await setDoc(doc(db, CARE_CENTERS_COLLECTION, data.id), payload);
+      await syncAdminWaitTimeOverride({
+        careCenterID: data.id,
+        minutes: data.waitTime,
+        reason: data.waitOverrideReason,
+        updatedBy: data.waitOverrideUpdatedBy,
+      });
       router.push("/care-centers");
     } catch (e) {
       const message = e instanceof Error ? e.message : "Failed to save care center.";
