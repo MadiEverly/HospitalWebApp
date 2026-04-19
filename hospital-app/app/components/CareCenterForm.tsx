@@ -15,12 +15,21 @@ type CareCenterFormProps = {
   initialData?: Partial<CareCenter>;
   onSubmit?: (data: CareCenter) => void;
   disabled?: boolean;
+  /**
+   * When set, the facility issue field is edited outside this form (e.g. on the
+   * care center detail page) but still included when you save the care center.
+   */
+  facilityIssueDraft?: {
+    value: string;
+    onChange: (value: string) => void;
+  };
 };
 
 export default function CareCenterForm({
   initialData,
   onSubmit,
   disabled = false,
+  facilityIssueDraft,
 }: CareCenterFormProps) {
   const [form, setForm] = useState<CareCenter>(() => {
     const base = createEmptyCareCenter();
@@ -124,6 +133,9 @@ export default function CareCenterForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const facilityIssueType = facilityIssueDraft
+      ? facilityIssueDraft.value.trim() || undefined
+      : form.facilityIssueType?.trim() || undefined;
     const payload: CareCenter = {
       ...form,
       type: form.type || undefined,
@@ -132,7 +144,7 @@ export default function CareCenterForm({
       email: form.email || undefined,
       waitTime:
         form.waitTime != null && form.waitTime > 0 ? form.waitTime : undefined,
-      facilityIssueType: form.facilityIssueType?.trim() || undefined,
+      facilityIssueType,
     };
     onSubmit?.(payload);
   };
@@ -363,10 +375,10 @@ export default function CareCenterForm({
         </div>
       </section>
 
-      {/* Wait time (Firestore: waitTime, minutes) & facility issue type */}
+      {/* Wait time (Firestore: waitTime, minutes); facility issue may be edited above the form */}
       <section className="space-y-4">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-          Wait time & facility issue
+          {facilityIssueDraft ? "Wait time" : "Wait time & facility issue"}
         </h3>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           Manual wait is saved to{" "}
@@ -414,23 +426,25 @@ export default function CareCenterForm({
             />
           </div>
         </div>
-        <div>
-          <label htmlFor="facilityIssueType" className={labelClass}>
-            Facility issue type
-          </label>
-          <input
-            id="facilityIssueType"
-            type="text"
-            value={form.facilityIssueType ?? ""}
-            onChange={(e) => update("facilityIssueType", e.target.value)}
-            disabled={disabled}
-            className={inputClass}
-            placeholder='e.g. X-ray broken'
-          />
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-            Leave blank if there is no current issue.
-          </p>
-        </div>
+        {!facilityIssueDraft && (
+          <div>
+            <label htmlFor="facilityIssueType" className={labelClass}>
+              Facility issue type
+            </label>
+            <input
+              id="facilityIssueType"
+              type="text"
+              value={form.facilityIssueType ?? ""}
+              onChange={(e) => update("facilityIssueType", e.target.value)}
+              disabled={disabled}
+              className={inputClass}
+              placeholder="e.g. X-ray broken"
+            />
+            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+              Leave blank if there is no current issue.
+            </p>
+          </div>
+        )}
       </section>
 
       {/* Capabilities */}

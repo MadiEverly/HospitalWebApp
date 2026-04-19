@@ -7,8 +7,9 @@ import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import {
   CARE_CENTERS_COLLECTION,
-  toFirestoreData,
+  careCenterFirestoreUpdateFields,
   careCenterFromSnapshot,
+  facilityIssueFirestorePatch,
 } from "@/lib/care-centers";
 import {
   syncAdminWaitTimeOverride,
@@ -29,6 +30,8 @@ export default function CareCenterEditPage() {
   const [notFound, setNotFound] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [issueDraft, setIssueDraft] = useState("");
+  const [issueSaving, setIssueSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -79,12 +82,55 @@ export default function CareCenterEditPage() {
     fetchCareCenter(id);
   }, [id]);
 
+  useEffect(() => {
+    if (careCenter) {
+      setIssueDraft(careCenter.facilityIssueType ?? "");
+    }
+  }, [careCenter?.id, careCenter?.facilityIssueType]);
+
+  const persistFacilityIssue = async (text: string | undefined) => {
+    if (!id) return;
+    setIssueSaving(true);
+    setError(null);
+    try {
+      await updateDoc(
+        doc(db, CARE_CENTERS_COLLECTION, id),
+        facilityIssueFirestorePatch(text)
+      );
+      const next = text?.trim() || undefined;
+      setCareCenter((c) => (c ? { ...c, facilityIssueType: next } : c));
+      setIssueDraft(next ?? "");
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : "Failed to update facility issue."
+      );
+    } finally {
+      setIssueSaving(false);
+    }
+  };
+
+  const handleSaveFacilityIssue = () => {
+    void persistFacilityIssue(issueDraft);
+  };
+
+  const handleClearFacilityIssue = () => {
+    if (!issueDraft.trim() && !careCenter?.facilityIssueType?.trim()) return;
+    if (
+      !confirm(
+        "Clear this facility issue report? Patients will no longer see it."
+      )
+    ) {
+      return;
+    }
+    void persistFacilityIssue(undefined);
+  };
+
   const handleSubmit = async (data: CareCenter) => {
     if (!id) return;
     setIsSubmitting(true);
     setError(null);
     try {
-      const payload = toFirestoreData(data);
+      const payload = careCenterFirestoreUpdateFields(data);
       await updateDoc(doc(db, CARE_CENTERS_COLLECTION, id), payload);
       await syncAdminWaitTimeOverride({
         careCenterID: id,
@@ -206,42 +252,83 @@ export default function CareCenterEditPage() {
           </div>
         )}
 
-        {(formatDurationMinutes(careCenter.waitTime) ||
-          (careCenter.facilityIssueType?.trim() ?? "")) && (
+        {formatDurationMinutes(careCenter.waitTime) && (
           <div className="mb-6 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-              Wait & facility status
+              Wait status
             </h2>
             <dl className="mt-3 space-y-2 text-sm">
-              {formatDurationMinutes(careCenter.waitTime) && (
-                <div className="flex flex-wrap gap-2">
-                  <dt className="font-medium text-zinc-700 dark:text-zinc-300">
-                    Typical wait time
-                  </dt>
-                  <dd className="text-zinc-900 dark:text-zinc-100">
-                    {formatDurationMinutes(careCenter.waitTime)}
-                  </dd>
-                </div>
-              )}
-              {careCenter.facilityIssueType?.trim() && (
-                <div className="flex flex-wrap gap-2">
-                  <dt className="font-medium text-zinc-700 dark:text-zinc-300">
-                    Facility issue
-                  </dt>
-                  <dd className="text-zinc-900 dark:text-zinc-100">
-                    {careCenter.facilityIssueType.trim()}
-                  </dd>
-                </div>
-              )}
+              <div className="flex flex-wrap gap-2">
+                <dt className="font-medium text-zinc-700 dark:text-zinc-300">
+                  Typical wait time
+                </dt>
+                <dd className="text-zinc-900 dark:text-zinc-100">
+                  {formatDurationMinutes(careCenter.waitTime)}
+                </dd>
+              </div>
             </dl>
           </div>
         )}
+
+        <div className="mb-6 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+            Facility issue report
+          </h2>
+          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+            Shown to patients as the current facility issue. &quot;Save
+            report&quot; writes only this field. Use Submit below to save the
+            rest of the care center together with this text.
+          </p>
+          <label htmlFor="facility-issue-draft" className="sr-only">
+            Facility issue description
+          </label>
+          <textarea
+            id="facility-issue-draft"
+            value={issueDraft}
+            onChange={(e) => setIssueDraft(e.target.value)}
+            disabled={issueSaving || isSubmitting}
+            rows={3}
+            className="mt-3 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm transition focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-500/20 disabled:opacity-60 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+            placeholder="e.g. X-ray temporarily offline — use partner site for imaging"
+          />
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={handleSaveFacilityIssue}
+              disabled={
+                issueSaving ||
+                isSubmitting ||
+                issueDraft.trim() ===
+                  (careCenter.facilityIssueType?.trim() ?? "")
+              }
+              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+            >
+              {issueSaving ? "Saving…" : "Save report"}
+            </button>
+            <button
+              type="button"
+              onClick={handleClearFacilityIssue}
+              disabled={
+                issueSaving ||
+                isSubmitting ||
+                (!issueDraft.trim() && !careCenter.facilityIssueType?.trim())
+              }
+              className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            >
+              Clear report
+            </button>
+          </div>
+        </div>
 
         <CareCenterForm
           key={careCenter.id}
           initialData={careCenter}
           onSubmit={handleSubmit}
           disabled={isSubmitting}
+          facilityIssueDraft={{
+            value: issueDraft,
+            onChange: setIssueDraft,
+          }}
         />
 
         <div className="mt-6 flex justify-end">

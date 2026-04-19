@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "staging": "hospital-waiting-app"
+  },
+  "targets": {},
+  "etags": {}
+}

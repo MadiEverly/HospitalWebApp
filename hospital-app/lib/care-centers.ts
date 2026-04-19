@@ -1,5 +1,5 @@
 import type { CareCenter } from "@/lib/types/care-center";
-import type { DocumentSnapshot } from "firebase/firestore";
+import { deleteField, type DocumentSnapshot } from "firebase/firestore";
 
 export const CARE_CENTERS_COLLECTION = "careCenters";
 
@@ -23,6 +23,40 @@ export function toFirestoreData(data: CareCenter): Record<string, unknown> {
     if (value !== undefined) out[key] = value;
   }
   return out;
+}
+
+/**
+ * Fields for `updateDoc` on a care center so clearing `facilityIssueType`
+ * removes the key in Firestore (plain `updateDoc` with undefined omits the field).
+ * Also drops legacy `facilityIssue` when setting or clearing the issue.
+ */
+export function careCenterFirestoreUpdateFields(
+  data: CareCenter
+): Record<string, unknown> {
+  const base = { ...toFirestoreData(data) };
+  if (data.facilityIssueType?.trim()) {
+    base.facilityIssueType = data.facilityIssueType.trim();
+    base.facilityIssue = deleteField();
+  } else {
+    base.facilityIssueType = deleteField();
+    base.facilityIssue = deleteField();
+  }
+  return base;
+}
+
+/** Partial update: only facility issue fields. */
+export function facilityIssueFirestorePatch(issue: string | undefined) {
+  const trimmed = issue?.trim();
+  if (trimmed) {
+    return {
+      facilityIssueType: trimmed,
+      facilityIssue: deleteField(),
+    };
+  }
+  return {
+    facilityIssueType: deleteField(),
+    facilityIssue: deleteField(),
+  };
 }
 
 /** Parse a Firestore document snapshot into a CareCenter. */
